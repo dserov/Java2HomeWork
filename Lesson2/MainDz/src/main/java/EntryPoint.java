@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 geekbrains homework lesson1
+ * Copyright (C) 2018 geekbrains homework lesson2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 import MyExceptions.MyArrayDataException;
 import MyExceptions.MySizeArrayException;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
+ * Берем массивы, суммируем их члены. Обрабатываем исключения.
+ *
  * @author DSerov
  * @version dated 04 Mar, 2018
  */
@@ -58,36 +58,28 @@ public class EntryPoint {
         System.out.println("--------------testArrayAllOk-----------------------");
         try {
             System.out.println("Summa = " + checkAndSumArray(testArrayAllOk));
-        } catch (MyArrayDataException e) {
-            System.out.println(e.getMessage());
-        } catch (MySizeArrayException e) {
+        } catch (MyArrayDataException | MySizeArrayException e) {
             System.out.println(e.getMessage());
         }
 
         System.out.println("--------------testArrayBadColsCount----------------");
         try {
             System.out.println("Summa = " + checkAndSumArray(testArrayBadColsCount));
-        } catch (MyArrayDataException e) {
-            System.out.println(e.getMessage());
-        } catch (MySizeArrayException e) {
+        } catch (MyArrayDataException | MySizeArrayException e) {
             System.out.println(e.getMessage());
         }
 
         System.out.println("--------------testArrayBadRowsCount----------------");
         try {
             System.out.println("Summa = " + checkAndSumArray(testArrayBadRowsCount));
-        } catch (MyArrayDataException e) {
-            System.out.println(e.getMessage());
-        } catch (MySizeArrayException e) {
+        } catch (MyArrayDataException | MySizeArrayException e) {
             System.out.println(e.getMessage());
         }
 
         System.out.println("--------------testArrayBadValues-------------------");
         try {
             System.out.println("Summa = " + checkAndSumArray(testArrayBadValues));
-        } catch (MyArrayDataException e) {
-            System.out.println(e.getMessage());
-        } catch (MySizeArrayException e) {
+        } catch (MyArrayDataException | MySizeArrayException e) {
             System.out.println(e.getMessage());
         }
 
@@ -112,7 +104,10 @@ public class EntryPoint {
             }
             return totalSum;
         } catch (NumberFormatException e) {
-            throw new MyArrayDataException("Ошибка в строке=" + ++i + " столбце=" + ++j + "\n" + Arrays.deepToString(test));
+            String arr = Arrays.deepToString(test);
+            // добавим символов переноса строки для претти-принт
+            arr = arr.replace("],", "],\n");
+            throw new MyArrayDataException("Ошибка в строке=" + ++i + " столбце=" + ++j + "\n" + arr);
         }
     }
 }
