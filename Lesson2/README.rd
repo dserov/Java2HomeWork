@@ -37,13 +37,10 @@ public class DayOfWeekMain {
 
 Сборка и компиляция проекта (сборка jar-файла) :
 ```
-mvn clean compile assembly:single
+mvn package
 ```
-Запуск либо
+Запуск
 ```
-java -jar lesson1.jar
-```
-либо
-```
-mvn exec:java -Dexec.mainClass="EntryPoint"
+java -jar MainDz\MainDz.jar
+java -jar DopDz1\DopDz1.jar
 ```

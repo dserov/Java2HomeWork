@@ -1,5 +1,3 @@
-package DopDz1;
-
 public enum DayOfWeek {
     MONDAY(0),
     TUESDAY(1),
