@@ -4,7 +4,9 @@ public class DayOfWeekMain {
     }
 
     private static int getWorkingHours(DayOfWeek dayOfWeek) {
-        // примем, что рабочих часов в день - 8, и выходных нету...
-        return (7 - dayOfWeek.getNpp()) * 8;
+        // примем, что рабочих часов в день - 8
+        // 5 - количество рабочих дней с начала недели
+        int days = Math.max(0, 5 - dayOfWeek.getNpp()); // не должен стать отрицательным
+        return days * 8;
     }
 }

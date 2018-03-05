@@ -43,4 +43,5 @@ mvn package
 ```
 java -jar MainDz\MainDz.jar
 java -jar DopDz1\DopDz1.jar
+java -jar DopDz1\DopDz2.jar
 ```
