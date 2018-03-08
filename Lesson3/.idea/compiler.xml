@@ -7,7 +7,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="DopDz1" />
-        <module name="DopDz2" />
         <module name="MainDz" />
       </profile>
     </annotationProcessing>

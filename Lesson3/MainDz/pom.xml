@@ -27,7 +27,7 @@
                     <finalName>MainDz</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>EntryPoint</mainClass>
+                            <mainClass>TestPerfomance</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

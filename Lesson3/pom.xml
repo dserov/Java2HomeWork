@@ -12,7 +12,6 @@
     <modules>
         <module>MainDz</module>
         <module>DopDz1</module>
-        <module>DopDz2</module>
     </modules>
 
     <properties>

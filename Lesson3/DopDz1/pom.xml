@@ -27,7 +27,7 @@
                     <finalName>DopDz1</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>EntryClass</mainClass>
+                            <mainClass>TestPerfomance</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
