@@ -6,16 +6,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="DopDz1" />
-        <module name="DopDz2" />
-        <module name="MainDz" />
+        <module name="Lesson4" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="DopDz1" target="1.8" />
       <module name="DopDz2" target="1.8" />
       <module name="Lesson4" target="1.8" />
-      <module name="MainDz" target="1.8" />
+      <module name="MainDz" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>

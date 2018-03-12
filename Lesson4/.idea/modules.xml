@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/DopDz1/DopDz1.iml" filepath="$PROJECT_DIR$/DopDz1/DopDz1.iml" />
-      <module fileurl="file://$PROJECT_DIR$/DopDz2/DopDz2.iml" filepath="$PROJECT_DIR$/DopDz2/DopDz2.iml" />
       <module fileurl="file://$PROJECT_DIR$/Lesson4.iml" filepath="$PROJECT_DIR$/Lesson4.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MainDz/MainDz.iml" filepath="$PROJECT_DIR$/MainDz/MainDz.iml" />
     </modules>
   </component>
 </project>
