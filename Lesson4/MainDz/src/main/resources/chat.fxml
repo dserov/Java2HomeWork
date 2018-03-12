@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.fontawesome.AwesomeIcon?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import de.jensd.fx.fontawesome.Icon?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ChatController"
+      prefHeight="400.0" prefWidth="600.0" stylesheets="/styles/awesome_dark.css, /css/style.css">
+
+    <HBox VBox.vgrow="ALWAYS">
+        <ScrollPane HBox.hgrow="ALWAYS" fitToWidth="true" fitToHeight="true">
+            <TextArea editable="false" />
+        </ScrollPane>
+        <ListView fx:id="users_list" minWidth="150" />
+    </HBox>
+    <HBox>
+        <TextField HBox.hgrow="ALWAYS" promptText="Введите ваше сообщение"></TextField>
+        <Button>
+            <graphic>
+                <Icon awesomeIcon="SMILE_ALT" size="14" styleClass="" style=""/>
+            </graphic>
+        </Button>
+        <Button text="Send">
+            <graphic>
+                <Icon awesomeIcon="PAPER_PLANE" size="14" styleClass="" style=""/>
+            </graphic>
+        </Button>
+    </HBox>
+</VBox>
