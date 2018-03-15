@@ -82,7 +82,7 @@ public class EntryPoint {
         float[][] splices = new float[cpuCount][];
 
         // разобъем массив на n частей
-        for (int i = 0; i < cpuCount; i++) {
+        for (int i = 0; i < splices.length; i++) {
             splices[i] = new float[halfSize];
             System.arraycopy(arr, i * halfSize, splices[i], 0, halfSize);
         }
@@ -101,7 +101,7 @@ public class EntryPoint {
             threads[i].join();
 
         // склеим массив воедино
-        for (int i = 0; i < threads.length; i++) {
+        for (int i = 0; i < splices.length; i++) {
             splices[i] = new float[halfSize];
             System.arraycopy(splices[i], 0, arr, i * halfSize, halfSize);
         }
