@@ -90,7 +90,7 @@ public class EntryPoint {
         // подготовим и запустим нужное количество потоков для обработки
         Thread threads[] = new Thread[cpuCount];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(new CalculateArray(splices[i]));
+            threads[i] = new Thread(new CalculateArray(splices[i], i * halfSize));
             // и дождемся, пока они отработают
             System.out.println("Стартуем поток #" + i);
             threads[i].start();
@@ -149,14 +149,18 @@ public class EntryPoint {
  */
 class CalculateArray implements Runnable {
     private float[] array;
+    private int shift; // смещение ячейки в оригинальном массиве
 
-    CalculateArray(float[] array) {
+    CalculateArray(float[] array, int shift) {
         this.array = array;
+        this.shift = shift;
     }
 
     public void run() {
         for (int i = 0; i < array.length; i++)
-            array[i] = (float) (array[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) *
-                    Math.cos(0.4f + i / 2));
+            array[i] = (float) (array[i] *
+                    Math.sin(0.2f + (i + shift) / 5) *
+                    Math.cos(0.2f + (i + shift) / 5) *
+                    Math.cos(0.4f + (i + shift) / 2));
     }
 }
