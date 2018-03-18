@@ -12,9 +12,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<?import de.jensd.fx.fontawesome.AwesomeIcon?>
 <VBox prefHeight="400.0" prefWidth="600.0" stylesheets="/styles/awesome_dark.css, /css/style.css"
-      xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ChatController">
+      xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.ChatController">
     <HBox>
         <Button>
             <graphic>
@@ -45,7 +44,7 @@
                 <Tooltip text="Введите Ваше сообщение"/>
             </tooltip>
         </TextField>
-        <Button>
+        <Button onAction="#showSmile">
             <graphic>
                 <Icon awesomeIcon="SMILE_ALT" size="14" style="" styleClass=""/>
             </graphic>
