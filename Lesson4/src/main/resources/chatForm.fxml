@@ -12,15 +12,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="400.0" prefWidth="600.0" stylesheets="/styles/awesome_dark.css, /css/style.css"
-      xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.ChatController">
-    <HBox>
-        <Button>
-            <graphic>
-                <Icon awesomeIcon="BARS" size="2em" style="" styleClass="icons"/>
-            </graphic>
-        </Button>
-    </HBox>
+<VBox prefHeight="400.0" prefWidth="600.0" stylesheets="/css/awesome_dark.css,/css/chatForm.css"
+      xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.Controllers.ChatController">
     <HBox VBox.vgrow="ALWAYS">
         <ScrollPane fitToHeight="true" fitToWidth="true" HBox.hgrow="ALWAYS">
             <TextArea fx:id="textChat" editable="false"/>

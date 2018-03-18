@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package client;
+package client.Controllers;
 
-import client.loginForm.LoginController;
 import de.jensd.fx.fontawesome.AwesomeIcon;
 import de.jensd.fx.fontawesome.Icon;
+import javafx.application.Application;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.DataInputStream;
@@ -58,11 +68,20 @@ public class ChatController implements Initializable {
     private DataInputStream inputStream = null;
     private DataOutputStream outputStream = null;
 
+    private ObjectProperty<Socket> socketObjectProperty = new SimpleObjectProperty<>();
+
     @FXML
-    private void showSmile(ActionEvent event) throws IOException {
+    private void showSmile(ActionEvent event) {
+        socketObjectProperty.addListener(new ChangeListener<Socket>() {
+            @Override
+            public void changed(ObservableValue<? extends Socket> observable, Socket oldValue, Socket newValue) {
+
+            }
+        });
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Не реализовано", ButtonType.OK);
         alert.show();
     }
+
     /**
      * Отображение даты и времени в окне чата
      */

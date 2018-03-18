@@ -1,7 +1,7 @@
 .label {
     -fx-font-size: 12px;
     -fx-font-weight: bold;
-    -fx-text-fill: #333333;
+    -fx-text-fill: #b8b8b8;
     -fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );
 }
 
@@ -9,11 +9,11 @@
     -fx-font-size: 32px;
     -fx-font-family: "Arial Black";
     -fx-fill: #818181;
-    -fx-effect: innershadow( three-pass-box , rgba(0,0,0,0.7) , 6, 0.0 , 0 , 2 );
+    -fx-effect: innershadow( three-pass-box , rgba(255, 255, 255, 0.7), 6, 0.0 , 0 , 2 );
 }
 
 #loginMessage {
-    -fx-fill: FIREBRICK;
+    -fx-fill: #c1a00d;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );
+    /*-fx-effect: dropshadow( gaussian , rgba(131, 131, 131, 0.5), 0,0,0,1 );*/
 }
