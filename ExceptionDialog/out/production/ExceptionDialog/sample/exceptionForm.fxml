@@ -8,7 +8,6 @@
 
 <fx:root type="BorderPane" xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="sample.ExceptionPane"
             prefHeight="400.0" prefWidth="600.0">
     <center>
         <TextArea fx:id="stackTrace" editable="false" wrapText="false" />
