@@ -14,6 +14,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -53,8 +54,25 @@ public class LoginController extends GridPane implements Initializable {
         loginButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                loginMessage.setText("Enter button pressed");
+                System.out.println("Enter button pressed");
+                stage.hide();
             }
         });
+    }
+
+    public String getLoginName() {
+        return loginName.getText();
+    }
+
+    public String getLoginPassword() {
+        return loginPassword.getText();
+    }
+
+    /**
+     * отображаем логинскрин с заданным сообщением и ждем нажатия "Enter"
+     */
+    public void showAndWait(String message) {
+        loginMessage.setText(message);
+        stage.showAndWait();
     }
 }

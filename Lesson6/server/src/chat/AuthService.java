@@ -1,6 +1,12 @@
 package chat;
 
+import java.nio.charset.Charset;
+import java.security.CryptoPrimitive;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
+import java.util.Arrays;
+import java.util.Base64;
 
 public class AuthService {
     private final String connString = "jdbc:sqlite:server\\src\\chat\\chat.sqlite";
@@ -24,14 +30,13 @@ public class AuthService {
         // подключимся к БД
         Class.forName("org.sqlite.JDBC");
         connection = DriverManager.getConnection(connString);
-//        connection.setSchema("main");
     }
 
     public void disconnect() throws SQLException {
         connection.close();
     }
 
-    public User getUserByLogin(String login) throws AuthServiceException {
+    public User authorizeUser(String login, String password) throws AuthServiceException {
         User user = null;
         try {
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE login = ? LIMIT 1");
@@ -44,6 +49,11 @@ public class AuthService {
                         resultSet.getString("password"),
                         resultSet.getString("nickname")
                 );
+
+                // проверим соответствие пароля
+                String encodedPassword = encodePassword(password);
+                if (!encodedPassword.equals(user.getPassword()))
+                    return null; // а пароль не совпал
             }
         } catch (SQLException e) {
             throw new AuthServiceException("Authservice failed: " + e.getMessage());
@@ -78,14 +88,26 @@ public class AuthService {
         }
         try {
             PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO users (id, login, password, nickname) VALUES (?, ?, ?, ?);");
-            statement.setInt(1, user.getId());
-            statement.setString(2, user.getLogin());
-            statement.setString(3, user.getPassword());
-            statement.setString(4, user.getNickname());
+                    "INSERT INTO users (login, password, nickname) VALUES (?, ?, ?);");
+            statement.setString(1, user.getLogin());
+            statement.setString(2, encodePassword(user.getPassword()));
+            statement.setString(3, user.getNickname());
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new AuthServiceException("Authservice failed: " + e.getMessage());
+        }
+    }
+
+    private String encodePassword(String clearPassword) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte arrClear[] = clearPassword.getBytes(Charset.forName("UTF8"));
+            byte arrEncoded[] = md.digest(arrClear);
+            String encodedPassword = Base64.getEncoder().encodeToString(arrEncoded);
+            return encodedPassword;
+        } catch (NoSuchAlgorithmException e) {
+            // нет алгоритма. печаль
+            throw new RuntimeException(e);
         }
     }
 }

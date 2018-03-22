@@ -17,15 +17,15 @@
 package chat;
 
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
+
 
 /**
  * Точка входа клиента
@@ -34,8 +34,6 @@ import java.net.Socket;
  * @version dated March 16, 2018
  */
 public class EntryPoint extends Application {
-    LoginController loginController;
-    ChatController chatController;
     public static void main(String[] args) {
         launch(args);
     }
@@ -44,66 +42,16 @@ public class EntryPoint extends Application {
     public void start(Stage primaryStage) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatForm.fxml"));
         Parent root = loader.load();
-        chatController = loader.getController();
         Scene scene = new Scene(root, 600, 300);
         primaryStage.setScene(scene);
         primaryStage.setTitle("My Chat");
-        primaryStage.show();
-
-        // make login dialog
-        loginController = LoginController.makeDialog();
-        loginController.getStage().show();
-
-        new Thread(new Runnable() {
-            final private String SERVER_ADDRESS = "localhost";
-            final private int SERVER_PORT = 8189;
-            private Socket socket = null;
-            private DataInputStream inputStream = null;
-            private DataOutputStream outputStream = null;
-
+        primaryStage.setOnShown(new EventHandler<WindowEvent>() {
             @Override
-            public void run() {
-                try {
-                    // Попытка подключиться к серверу
-                    socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-
-                    // мапим дата стримы
-                    inputStream = new DataInputStream(socket.getInputStream());
-                    outputStream = new DataOutputStream(socket.getOutputStream());
-
-                    // основной поток, обслуживающий сообщения
-                    try {
-                        while (!socket.isClosed()) {
-                            // пришло с сервера
-                            String message = inputStream.readUTF();
-                            chatController.getTextChat().appendText(message);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                } catch (IOException e) {
-                    //chatController.getTextChat().appendText(e.getMessage());
-                    return;
-                }
-
-                try {
-                    if (inputStream != null) inputStream.close();
-                } catch (IOException e) {
-                    chatController.getTextChat().appendText(e.toString());
-                    e.printStackTrace();
-                }
-                try {
-                    if (outputStream != null) outputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    if (socket != null && !socket.isClosed()) socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            public void handle(WindowEvent event) {
+                ChatController chatController = loader.getController();
+                chatController.initConnection();
             }
-        }).start();
+        });
+        primaryStage.show();
     }
 }

@@ -25,14 +25,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.util.Callback;
+import javafx.application.Platform;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
 /**
@@ -41,7 +38,7 @@ import java.util.ResourceBundle;
  * @author DSerov
  * @version dated March 16, 2018
  */
-public class ChatController implements Initializable {
+public class ChatController implements Initializable, TCPConnectionListener {
     @FXML
     TextField msgField;
 
@@ -53,9 +50,11 @@ public class ChatController implements Initializable {
 
     final private String SERVER_ADDRESS = "localhost";
     final private int SERVER_PORT = 8189;
-    private Socket socket = null;
-    private DataInputStream inputStream = null;
-    private DataOutputStream outputStream = null;
+    private TCPConnection connection;
+    private LoginController loginController;
+
+    // true, если подключен и авторизован. логин прячем, нормальная работа. иначе показываем логин скрин
+    private volatile boolean isAuthenticated = false;
 
     @FXML
     private void showSmile(ActionEvent event) {
@@ -63,9 +62,6 @@ public class ChatController implements Initializable {
         alert.show();
     }
 
-    /**
-     * Отображение даты и времени в окне чата
-     */
     @FXML
     private void sendMessage(ActionEvent event) {
         msgField.requestFocus();
@@ -75,17 +71,7 @@ public class ChatController implements Initializable {
 
         if (msg.length() == 0) return;
 
-        LocalDateTime localDateTime = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yy HH:mm:ss");
-        String dt = localDateTime.format(dateTimeFormatter);
-        msg = dt + ": " + msg;
-
-        try {
-            outputStream.writeUTF(msg);
-        } catch (IOException e) {
-            textChat.appendText("Отправить не удалось!");
-            e.printStackTrace();
-        }
+        connection.sendString(msg);
     }
 
     public TextField getMsgField() {
@@ -118,51 +104,74 @@ public class ChatController implements Initializable {
             }
         });
 
-//        try {
-//            // Попытка подключиться к серверу
-//            socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-//
-//            // мапим дата стримы
-//            inputStream = new DataInputStream(socket.getInputStream());
-//            outputStream = new DataOutputStream(socket.getOutputStream());
-//
-//            new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    // основной поток, обслуживающий сообщения
-//                    try {
-//                        while (!socket.isClosed()) {
-//                            // пришло с сервера
-//                            String message = inputStream.readUTF();
-//                            textChat.appendText(message);
-//                        }
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }).start();
-//
-//        } catch (IOException e) {
-//            textChat.appendText(e.getMessage());
-//            return;
-//        }
-//
-//        try {
-//            if (inputStream != null) inputStream.close();
-//        } catch (IOException e) {
-//            textChat.appendText(e.toString());
-//            e.printStackTrace();
-//        }
-//        try {
-//            if (outputStream != null) outputStream.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        try {
-//            if (socket != null && !socket.isClosed()) socket.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            // создадим в памяти диалог для ввода логина - пароля
+            loginController = LoginController.makeDialog();
+        } catch (IOException e) {
+            // не создался диалог - повод для паники
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void initConnection() {
+        Platform.runLater(new Runnable() {
+            @Override public void run() {
+                System.out.println("init connection");
+                String msg = "";
+                // никуда не идем, пока не законнектимся
+                while (true) {
+                    loginController.showAndWait(msg); // тут подвисаем, ждем закрытия окна
+
+                    // запуск соединения
+                    try {
+                        connection = new TCPConnection(ChatController.this, new Socket(SERVER_ADDRESS, SERVER_PORT));
+                        return;
+                    } catch (IOException e) {
+                        // тут главное не терять надежды, а попробовать еще раз
+                        msg = e.getMessage();
+                        System.out.println("initConnection: " + e.getMessage());
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onConnectionReady(TCPConnection tcpConnection) {
+        // попробуем авторизоваться
+        String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
+        tcpConnection.sendString(authCmd);
+    }
+
+    @Override
+    public void onReceiveString(TCPConnection tcpConnection, String value) {
+        if (value.equals("")) return;
+        String parts[] = value.split(" ");
+        String cmd = parts[0];
+        System.out.println("cmd: " + cmd);
+        if (cmd.equals("/authok")) {
+            // авторизовался успешно
+            textChat.appendText("Подключились к серверу.");
+            return;
+        }
+        if (cmd.equals("/autherr")) {
+            // деавторизация
+            tcpConnection.disconnect();
+            initConnection();
+            return;
+        }
+        textChat.appendText(value);
+    }
+
+    @Override
+    public void onDisconnect(TCPConnection tcpConnection) {
+
+    }
+
+    @Override
+    public void onException(TCPConnection tcpConnection, Exception e) {
+
     }
 }
 
