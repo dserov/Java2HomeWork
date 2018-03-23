@@ -10,6 +10,15 @@ public class TCPConnection {
     private final TCPConnectionListener eventListener;
     private final BufferedReader in;
     private final BufferedWriter out;
+    private String name = "";
+
+    public synchronized String getName() {
+        return name;
+    }
+
+    public synchronized void setName(String name) {
+        this.name = name;
+    }
 
     public TCPConnection(TCPConnectionListener eventListener, String ipAddr, int port) throws IOException {
         this(eventListener, new Socket(ipAddr, port));
@@ -36,6 +45,7 @@ public class TCPConnection {
                 }
             }
         });
+        rxThread.setDaemon(true);
         rxThread.start();
     }
 

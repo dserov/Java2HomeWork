@@ -2,11 +2,9 @@ package chat;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class EntryPoint implements TCPConnectionListener {
     public static void main(String[] args) {
@@ -14,9 +12,9 @@ public class EntryPoint implements TCPConnectionListener {
     }
 
     private final AuthService authService;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    // nickname -> tcpConnection pair
-    private final Map<String, TCPConnection> connections = new HashMap<>();
+    private final Vector<TCPConnection> connections = new Vector<>();
 
     public EntryPoint() {
         System.out.println("Connecting to database...");
@@ -51,18 +49,30 @@ public class EntryPoint implements TCPConnectionListener {
     @Override
     public synchronized void onConnectionReady(TCPConnection tcpConnection) {
         // подключен новый клиент. потребуем от него авторизацию
-        tcpConnection.sendString("/autherr");
-//        connections.add(tcpConnection);
-//        sendBroadcastMessage("Accepted new client, " + tcpConnection);
+        tcpConnection.sendString("/autherr Требуется авторизация");
     }
 
     @Override
     public synchronized void onReceiveString(TCPConnection tcpConnection, String value) {
+        // при тупом разрыве соединения value == null
+        if (value == null) {
+            tcpConnection.disconnect();
+            return;
+        }
+
+//        System.out.println(tcpConnection.toString() + "(" + tcpConnection.getName() + "): " + value);
         if (value.equals("")) return;
-        System.out.println(tcpConnection.toString() + ": " + value);
 
         String parts[] = value.split(" ");
         String cmd = parts[0];
+
+        // запрос на отключение
+        if (cmd.equals("/end")) {
+            // отключение от сервера
+            tcpConnection.disconnect();
+            return;
+        }
+
         if (cmd.equals("/auth")) {
             // попытка авторизации
             tryToAuth(parts, tcpConnection);
@@ -70,7 +80,7 @@ public class EntryPoint implements TCPConnectionListener {
         }
 
         // Проверка, что пользователь авторизован
-        if (!connections.containsValue(tcpConnection)) {
+        if (tcpConnection.getName().equals("")) {
             tcpConnection.sendString("/autherr Вам необходимо авторизоваться");
             return;
         }
@@ -81,32 +91,22 @@ public class EntryPoint implements TCPConnectionListener {
             return;
         }
 
-        if (cmd.equals("/end")) {
-            // отключение от сервера
-            tcpConnection.disconnect();
-            return;
-        }
-
-        sendAuthBroadcastMessage(value, tcpConnection);
+        sendNicknameBroadcastMessage(value, tcpConnection);
     }
 
     @Override
     public synchronized void onDisconnect(TCPConnection tcpConnection) {
-        Map.Entry<String, TCPConnection> needleEntry = null;
-        for (Map.Entry<String, TCPConnection> entry : connections.entrySet()) {
-            if (entry.getValue().equals(tcpConnection)) {
-                needleEntry = entry;
-                break;
-            }
-        }
-        if (needleEntry == null) {
+        String nickName = tcpConnection.getName();
+        if (nickName.equals("")) {
             System.out.println("Отключился неизвестный клиент");
             return;
         }
 
+        // удалим из списка авторизованных
+        connections.remove(tcpConnection);
+
         // отключился авторизованный клиент
-        sendUnAuthBroadcastMessage("/end " + needleEntry.getKey());
-        connections.remove(needleEntry.getKey());
+        sendBroadcastMessage("/end " + nickName);
     }
 
     @Override
@@ -120,16 +120,13 @@ public class EntryPoint implements TCPConnectionListener {
      * @param message
      * @param conn
      */
-    private synchronized void sendAuthBroadcastMessage(String message, TCPConnection conn) {
-        if (!connections.containsValue(conn)) {
-            // неавторизованный!
-            conn.sendString("/autherr Вам необходимо авторизоваться");
-            return;
-        }
-
-//        System.out.println(message);
-        for (Map.Entry<String, TCPConnection> entry : connections.entrySet()) {
-            entry.getValue().sendString(message);
+    private synchronized void sendNicknameBroadcastMessage(String message, TCPConnection conn) {
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String dt = localDateTime.format(formatter);
+        String nickName = conn.getName();
+        if (nickName.equals("")) return;
+        for (TCPConnection entry : connections) {
+            entry.sendString(dt + " " + nickName + ": " + message);
         }
     }
 
@@ -138,10 +135,8 @@ public class EntryPoint implements TCPConnectionListener {
      *
      * @param message
      */
-    private synchronized void sendUnAuthBroadcastMessage(String message) {
-//        System.out.println(message);
-        for (Map.Entry<String, TCPConnection> entry : connections.entrySet())
-            entry.getValue().sendString(message);
+    private synchronized void sendBroadcastMessage(String message) {
+        for (TCPConnection entry : connections) entry.sendString(message);
     }
 
     private synchronized void tryToAuth(String[] parts, TCPConnection conn) {
@@ -158,18 +153,22 @@ public class EntryPoint implements TCPConnectionListener {
                 return;
             }
 
-            // юзер авторизовался, супер. проверим, чтбо это не была вторая паралельная авторизация
-            if (connections.get(user.getNickname()) != null) {
-                // вторая авторизация
-                conn.sendString("/autherr Повторная авторизация");
-                return;
+            // юзер авторизовался, супер. проверим, чтоб это не была вторая паралельная авторизация
+            TCPConnection connection = null;
+            for (TCPConnection item : connections) {
+                if (item.getName().equals(user.getNickname())) {
+                    // вторая авторизация
+                    conn.sendString("/autherr Повторная авторизация");
+                    return;
+                }
             }
 
-            // все классно
-            connections.put(user.getNickname(), conn);
+            // все классно, первичная авторизация
+            conn.setName(user.getNickname());
+            connections.add(conn);
 
             // сообщим клиентам, что появился новый пользователь
-            sendUnAuthBroadcastMessage("/begin " + user.getNickname());
+            sendBroadcastMessage("/begin " + user.getNickname());
         } catch (AuthServiceException e) {
             conn.sendString("/autherr На сервере неполадки. Попробуйте подключиться позже.");
         }
@@ -182,21 +181,32 @@ public class EntryPoint implements TCPConnectionListener {
         }
 
         // ищем поток получателя по никнейму
-        TCPConnection receiverConnection = connections.get(parts[1]);
-        parts[0] = "";
-        parts[1] = "";
-        if (receiverConnection == null) {
+        TCPConnection receiver = null;
+        for (TCPConnection item : connections) {
+            if (item.getName().equals(parts[1])) {
+                receiver = item;
+                break;
+            }
+        }
+
+        // уберем первые 2 части из parts
+        String newMsg[] = new String[parts.length - 2];
+        System.arraycopy(parts, 2, newMsg, 0, newMsg.length);
+        if (receiver == null) {
             // не нашелся. Отправим это сообщение отправителю, пусть запомнит его
-            connection.sendString(String.join(" ", parts));
+            connection.sendString(String.join(" ", newMsg));
             return;
         }
 
-        // отправка получателю в новом потоке, чтоб избежать блокировок
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                receiverConnection.sendString(String.join(" ", parts));
-            }
-        }).start();
+        // разошлем сообщение отправителю и адресату
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String dt = localDateTime.format(formatter);
+
+        // отправителю
+        String nickName = connection.getName();
+        connection.sendString(dt + " " + nickName + ": " + String.join(" ", newMsg));
+
+        // получателю
+        receiver.sendString(dt + " " + nickName + ": " + String.join(" ", newMsg));
     }
 }

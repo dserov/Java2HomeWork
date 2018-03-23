@@ -30,6 +30,8 @@ import javafx.application.Platform;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
 /**
@@ -111,7 +113,6 @@ public class ChatController implements Initializable, TCPConnectionListener {
             // не создался диалог - повод для паники
             throw new RuntimeException(e);
         }
-
     }
 
     public void initConnection() {
@@ -123,6 +124,11 @@ public class ChatController implements Initializable, TCPConnectionListener {
                 while (true) {
                     loginController.showAndWait(msg); // тут подвисаем, ждем закрытия окна
 
+                    if (connection != null) {
+                        String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
+                        connection.sendString(authCmd);
+                        return;
+                    }
                     // запуск соединения
                     try {
                         connection = new TCPConnection(ChatController.this, new Socket(SERVER_ADDRESS, SERVER_PORT));
@@ -140,8 +146,8 @@ public class ChatController implements Initializable, TCPConnectionListener {
     @Override
     public void onConnectionReady(TCPConnection tcpConnection) {
         // попробуем авторизоваться
-        String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
-        tcpConnection.sendString(authCmd);
+//        String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
+//        tcpConnection.sendString(authCmd);
     }
 
     @Override
@@ -152,21 +158,31 @@ public class ChatController implements Initializable, TCPConnectionListener {
         System.out.println("cmd: " + cmd);
         if (cmd.equals("/authok")) {
             // авторизовался успешно
-            textChat.appendText("Подключились к серверу.");
+            textChat.appendText("Подключились к серверу.\r\n");
             return;
         }
         if (cmd.equals("/autherr")) {
             // деавторизация
-            tcpConnection.disconnect();
+//            tcpConnection.disconnect();
             initConnection();
             return;
         }
-        textChat.appendText(value);
+
+        if (cmd.equals("/begin")) {
+            // подключился новый клиент
+            System.out.print("Новый клиент: ");
+            if (parts.length == 2)
+                System.out.print(parts[1]);
+            System.out.println("");
+        }
+
+        textChat.appendText(value + "\r\n");
     }
 
     @Override
     public void onDisconnect(TCPConnection tcpConnection) {
-
+        tcpConnection.sendString("/end");
+        connection = null;
     }
 
     @Override

@@ -50,14 +50,7 @@ public class LoginController extends GridPane implements Initializable {
         // логин - пароль по-умолчанию
         loginName.setText("dserov");
         loginPassword.setText("dserov");
-
-        loginButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                System.out.println("Enter button pressed");
-                stage.hide();
-            }
-        });
+        loginButton.setOnAction((event) -> stage.hide() );
     }
 
     public String getLoginName() {
