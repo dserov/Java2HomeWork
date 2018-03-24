@@ -1,5 +1,6 @@
 package chat;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -13,6 +14,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.awt.*;
 import java.io.IOException;
@@ -27,13 +29,28 @@ public class LoginController extends GridPane implements Initializable {
 
     private Stage stage;
 
+    public boolean isNeedExit() {
+        return needExit;
+    }
+
+    public void setNeedExit(boolean needExit) {
+        this.needExit = needExit;
+    }
+
+    private boolean needExit = false;
+
     public static LoginController makeDialog() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(LoginController.class.getResource("/fxml/loginForm.fxml"));
         Stage stage = new Stage();
         stage.setScene(new Scene(fxmlLoader.load()));
         LoginController controller = fxmlLoader.getController();
         stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initStyle(StageStyle.UTILITY);
         controller.setStage(stage);
+        stage.setOnCloseRequest((event) -> {
+            // говорим, что хотим выйти из приложения
+            controller.setNeedExit(true);
+        });
         return controller;
     }
 
@@ -50,7 +67,7 @@ public class LoginController extends GridPane implements Initializable {
         // логин - пароль по-умолчанию
         loginName.setText("dserov");
         loginPassword.setText("dserov");
-        loginButton.setOnAction((event) -> stage.hide() );
+        loginButton.setOnAction((event) -> stage.close());
     }
 
     public String getLoginName() {

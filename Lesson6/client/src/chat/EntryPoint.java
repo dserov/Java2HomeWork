@@ -17,6 +17,7 @@
 package chat;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -34,6 +35,8 @@ import java.io.IOException;
  * @version dated March 16, 2018
  */
 public class EntryPoint extends Application {
+    private ChatController mainForm;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -43,15 +46,17 @@ public class EntryPoint extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatForm.fxml"));
         Parent root = loader.load();
         Scene scene = new Scene(root, 600, 300);
+        mainForm = loader.getController();
         primaryStage.setScene(scene);
         primaryStage.setTitle("My Chat");
-        primaryStage.setOnShown(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent event) {
-                ChatController chatController = loader.getController();
-                chatController.initConnection();
-            }
+        primaryStage.setOnShown((event) -> {
+            mainForm.setPrimaryStage(primaryStage);
+            mainForm.initConnection("");
         });
+
+        // при закрытии окна
+        primaryStage.setOnCloseRequest((event -> mainForm.closeConnectionAndExit()));
+
         primaryStage.show();
     }
 }

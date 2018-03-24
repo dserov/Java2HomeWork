@@ -5,6 +5,9 @@ import java.net.ServerSocket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class EntryPoint implements TCPConnectionListener {
     public static void main(String[] args) {
@@ -13,6 +16,7 @@ public class EntryPoint implements TCPConnectionListener {
 
     private final AuthService authService;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private final ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     private final Vector<TCPConnection> connections = new Vector<>();
 
@@ -48,8 +52,21 @@ public class EntryPoint implements TCPConnectionListener {
 
     @Override
     public synchronized void onConnectionReady(TCPConnection tcpConnection) {
-        // подключен новый клиент. потребуем от него авторизацию
-        tcpConnection.sendString("/autherr Требуется авторизация");
+        // подключен новый клиент
+        // Если на авторизуется за 120 секунд - отключим нафиг
+        class TimeoutUnAuthConnection implements Runnable {
+            TCPConnection connection;
+
+            @Override
+            public void run() {
+                if (connection.getName().isEmpty()) connection.disconnect();
+            }
+
+            public TimeoutUnAuthConnection(TCPConnection connection) {
+                this.connection = connection;
+            }
+        }
+        service.schedule(new TimeoutUnAuthConnection(tcpConnection), 10, TimeUnit.SECONDS);
     }
 
     @Override
@@ -169,6 +186,9 @@ public class EntryPoint implements TCPConnectionListener {
 
             // сообщим клиентам, что появился новый пользователь
             sendBroadcastMessage("/begin " + user.getNickname());
+
+            // а самому потоку скажем, что его ник такой-то
+            conn.sendString("/authok " + user.getNickname());
         } catch (AuthServiceException e) {
             conn.sendString("/autherr На сервере неполадки. Попробуйте подключиться позже.");
         }

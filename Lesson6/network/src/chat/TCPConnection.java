@@ -3,6 +3,7 @@ package chat;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
 
 public class TCPConnection {
     private final Socket socket;
@@ -10,6 +11,8 @@ public class TCPConnection {
     private final TCPConnectionListener eventListener;
     private final BufferedReader in;
     private final BufferedWriter out;
+
+    // если не авторизован, то имени не будет (никнейма)
     private String name = "";
 
     public synchronized String getName() {
@@ -36,10 +39,11 @@ public class TCPConnection {
                 try {
                     eventListener.onConnectionReady(TCPConnection.this);
                     while (!rxThread.isInterrupted()) {
-                        eventListener.onReceiveString(TCPConnection.this, in.readLine());
+                        if (in.ready()) eventListener.onReceiveString(TCPConnection.this, in.readLine());
                     }
                 } catch (IOException e) {
                     eventListener.onException(TCPConnection.this, e);
+                    e.printStackTrace();
                 } finally {
                     eventListener.onDisconnect(TCPConnection.this);
                 }

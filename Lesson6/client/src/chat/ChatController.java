@@ -18,12 +18,18 @@ package chat;
 
 import de.jensd.fx.fontawesome.AwesomeIcon;
 import de.jensd.fx.fontawesome.Icon;
+import javafx.application.Application;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.application.Platform;
 
@@ -52,8 +58,19 @@ public class ChatController implements Initializable, TCPConnectionListener {
 
     final private String SERVER_ADDRESS = "localhost";
     final private int SERVER_PORT = 8189;
+    private Stage primaryStage;
     private TCPConnection connection;
     private LoginController loginController;
+    final private StringProperty nickName = new SimpleStringProperty();
+    final private String DEFAULT_TITLE = "My chat";
+
+    public Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public void setPrimaryStage(Stage stage) {
+        this.primaryStage = stage;
+    }
 
     // true, если подключен и авторизован. логин прячем, нормальная работа. иначе показываем логин скрин
     private volatile boolean isAuthenticated = false;
@@ -72,6 +89,11 @@ public class ChatController implements Initializable, TCPConnectionListener {
         msgField.clear();
 
         if (msg.length() == 0) return;
+
+        if (connection == null) {
+            initConnection("");
+            return;
+        }
 
         connection.sendString(msg);
     }
@@ -106,6 +128,20 @@ public class ChatController implements Initializable, TCPConnectionListener {
             }
         });
 
+        // Сделаем замену заголовка при смене ника
+        nickName.addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                Platform.runLater(()-> {
+                    if (newValue.length() != 0)
+                        getPrimaryStage().setTitle(newValue);
+                    else
+                        getPrimaryStage().setTitle("My chat");
+                });
+            }
+        });
+        nickName.setValue(DEFAULT_TITLE);
+
         try {
             // создадим в памяти диалог для ввода логина - пароля
             loginController = LoginController.makeDialog();
@@ -115,14 +151,21 @@ public class ChatController implements Initializable, TCPConnectionListener {
         }
     }
 
-    public void initConnection() {
+    public void initConnection(String message) {
         Platform.runLater(new Runnable() {
-            @Override public void run() {
-                System.out.println("init connection");
-                String msg = "";
+            @Override
+            public void run() {
+                String msg = message;
                 // никуда не идем, пока не законнектимся
-                while (true) {
+                while (!isAuthenticated) {
+                    System.out.println("init connection");
                     loginController.showAndWait(msg); // тут подвисаем, ждем закрытия окна
+
+                    // может, мы выйти хотим?
+                    if(loginController.isNeedExit()) {
+                        closeConnectionAndExit();
+                        break;
+                    }
 
                     if (connection != null) {
                         String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
@@ -132,11 +175,15 @@ public class ChatController implements Initializable, TCPConnectionListener {
                     // запуск соединения
                     try {
                         connection = new TCPConnection(ChatController.this, new Socket(SERVER_ADDRESS, SERVER_PORT));
+
+                        // сразу авторизуемся
+                        String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
+                        connection.sendString(authCmd);
                         return;
                     } catch (IOException e) {
                         // тут главное не терять надежды, а попробовать еще раз
                         msg = e.getMessage();
-                        System.out.println("initConnection: " + e.getMessage());
+                        System.out.println("initConnectionException: " + e.getMessage());
                     }
                 }
             }
@@ -145,26 +192,35 @@ public class ChatController implements Initializable, TCPConnectionListener {
 
     @Override
     public void onConnectionReady(TCPConnection tcpConnection) {
-        // попробуем авторизоваться
-//        String authCmd = "/auth " + loginController.getLoginName() + " " + loginController.getLoginPassword();
-//        tcpConnection.sendString(authCmd);
+
     }
 
     @Override
     public void onReceiveString(TCPConnection tcpConnection, String value) {
+        if (value == null) return;
         if (value.equals("")) return;
+        System.out.println(value);
+
         String parts[] = value.split(" ");
         String cmd = parts[0];
-        System.out.println("cmd: " + cmd);
         if (cmd.equals("/authok")) {
             // авторизовался успешно
+            isAuthenticated = true;
             textChat.appendText("Подключились к серверу.\r\n");
+            // мне мой ник прислали
+            System.out.print("Мой ник: ");
+            if (parts.length == 2) {
+                System.out.print(parts[1]);
+                nickName.setValue(DEFAULT_TITLE + " - " + parts[1]);
+            }
+            System.out.println("");
             return;
         }
         if (cmd.equals("/autherr")) {
             // деавторизация
-//            tcpConnection.disconnect();
-            initConnection();
+            nickName.setValue(DEFAULT_TITLE);
+            isAuthenticated = false;
+            initConnection(value.substring("/autherr".length()));
             return;
         }
 
@@ -174,6 +230,7 @@ public class ChatController implements Initializable, TCPConnectionListener {
             if (parts.length == 2)
                 System.out.print(parts[1]);
             System.out.println("");
+            return;
         }
 
         textChat.appendText(value + "\r\n");
@@ -183,11 +240,19 @@ public class ChatController implements Initializable, TCPConnectionListener {
     public void onDisconnect(TCPConnection tcpConnection) {
         tcpConnection.sendString("/end");
         connection = null;
+        isAuthenticated = false;
+        nickName.setValue("");
     }
 
     @Override
     public void onException(TCPConnection tcpConnection, Exception e) {
 
+    }
+
+    public void closeConnectionAndExit() {
+        if (connection != null)
+            connection.disconnect();
+        Platform.exit();
     }
 }
 
