@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.fontawesome.Icon?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox prefHeight="400.0" prefWidth="600.0" stylesheets="/css/awesome_dark.css, /css/chatForm.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="chat.ChatController">
+    <HBox VBox.vgrow="ALWAYS">
+        <ScrollPane fitToHeight="true" fitToWidth="true" HBox.hgrow="ALWAYS">
+            <TextArea fx:id="textChat" editable="false" />
+        </ScrollPane>
+        <ListView fx:id="usersList" minWidth="150">
+            <tooltip>
+                <Tooltip text="Список пользователей чата" />
+            </tooltip>
+            <contextMenu>
+                <ContextMenu>
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Забанить" onAction="#banUser"/>
+                        <MenuItem mnemonicParsing="false" text="Помиловать" onAction="#unbanUser"/>
+                    </items>
+                </ContextMenu>
+            </contextMenu>
+        </ListView>
+    </HBox>
+    <HBox>
+        <TextField fx:id="msgField" onAction="#sendMessage" promptText="Введите ваше сообщение" HBox.hgrow="ALWAYS">
+            <tooltip>
+                <Tooltip text="Введите Ваше сообщение" />
+            </tooltip>
+        </TextField>
+        <Button onAction="#showSmile">
+            <graphic>
+                <Icon awesomeIcon="SMILE_ALT" size="14" style="" styleClass="" />
+            </graphic>
+            <tooltip>
+                <Tooltip text="Вставка смайлика" />
+            </tooltip>
+        </Button>
+        <Button onAction="#sendMessage" text="Send">
+            <graphic>
+                <Icon awesomeIcon="PAPER_PLANE" size="14" style="" styleClass="" />
+            </graphic>
+            <tooltip>
+                <Tooltip text="Отправка сообщения" />
+            </tooltip>
+        </Button>
+    </HBox>
+</VBox>
