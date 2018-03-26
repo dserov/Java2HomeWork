@@ -23,7 +23,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -34,7 +33,7 @@ import javafx.application.Platform;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Логика клиентского чата
@@ -242,9 +241,10 @@ public class ChatController implements Initializable, TCPConnectionListener {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                ObservableList<String> names = FXCollections.observableArrayList(contactString.split(","));
+                List<String> list = new ArrayList<>();
+                Collections.addAll(list, contactString.split(","));
+                ObservableList<String> names = FXCollections.observableArrayList(list);
                 usersList.setItems(names);
-                usersList.refresh();
             }
         });
     }
@@ -259,13 +259,16 @@ public class ChatController implements Initializable, TCPConnectionListener {
 
     @FXML
     private void banUser(ActionEvent event) {
-        System.out.println(event);
-        System.out.println("Selected item: " + usersList.getSelectionModel().getSelectedItem());
+        String banNick = usersList.getSelectionModel().getSelectedItem();
+        if (banNick.charAt(0) == '!') banNick = banNick.substring(1);
+        connection.sendString("/ban " + banNick);
     }
 
     @FXML
     private void unbanUser(ActionEvent event) {
-        System.out.println(event);
+        String unbanNick = usersList.getSelectionModel().getSelectedItem();
+        if (unbanNick.charAt(0) == '!') unbanNick = unbanNick.substring(1);
+        connection.sendString("/unban " + unbanNick);
     }
 }
 

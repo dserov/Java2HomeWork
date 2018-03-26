@@ -14,7 +14,7 @@ public class TCPConnection {
     private final BufferedWriter out;
 
     // если не авторизован, то имени не будет (никнейма)
-    private String name = "";
+    private String name = new String();
 
     public synchronized String getName() {
         return name;

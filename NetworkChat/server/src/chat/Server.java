@@ -1,5 +1,7 @@
 package chat;
 
+import com.sun.istack.internal.NotNull;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.LocalDateTime;
@@ -55,7 +57,7 @@ public class Server implements TCPConnectionListener {
     public synchronized void onConnectionReady(TCPConnection tcpConnection) {
         // подключен новый клиент
         // Если на авторизуется за 120 секунд - отключим нафиг
-         service.schedule(new TimeoutUnAuthConnection(tcpConnection), 120, TimeUnit.SECONDS);
+        service.schedule(new TimeoutUnAuthConnection(tcpConnection), 120, TimeUnit.SECONDS);
     }
 
     @Override
@@ -101,6 +103,22 @@ public class Server implements TCPConnectionListener {
             return;
         }
 
+        if (cmd.equals("/ban")) {
+            // бан юзера
+            banUser(parts, tcpConnection);
+            // обновим список клиентов
+            sendPrivateClientList(tcpConnection);
+            return;
+        }
+
+        if (cmd.equals("/unban")) {
+            // бан юзера
+            unbanUser(parts, tcpConnection);
+            // обновим список клиентов
+            sendPrivateClientList(tcpConnection);
+            return;
+        }
+
         sendNicknameBroadcastMessage(value, tcpConnection);
     }
 
@@ -128,6 +146,46 @@ public class Server implements TCPConnectionListener {
     }
 
     /**
+     * поместить в бан указанного пользователя
+     *
+     * @param parts
+     * @param tcpConnection
+     */
+    private void banUser(String[] parts, TCPConnection tcpConnection) {
+        if (parts.length != 2) {
+            tcpConnection.sendString("Недостаточно параметров: " + String.join(" ", parts));
+            return;
+        }
+
+        try {
+            authService.addUserToBanList(tcpConnection.getName(), parts[1]);
+        } catch (AuthServiceException e) {
+            tcpConnection.sendString("Не удалось выполнить команду");
+            System.out.println("Ошибка доступа к БД: " + e);
+        }
+    }
+
+    /**
+     * разбанить указанного пользователя
+     *
+     * @param parts
+     * @param tcpConnection
+     */
+    private void unbanUser(String[] parts, TCPConnection tcpConnection) {
+        if (parts.length != 2) {
+            tcpConnection.sendString("Недостаточно параметров: " + String.join(" ", parts));
+            return;
+        }
+
+        try {
+            authService.deleteUserFromBanList(tcpConnection.getName(), parts[1]);
+        } catch (AuthServiceException e) {
+            tcpConnection.sendString("Не удалось выполнить команду");
+            System.out.println("Ошибка доступа к БД: " + e);
+        }
+    }
+
+    /**
      * Посылка всем только от авторизованного соединения
      *
      * @param message
@@ -137,9 +195,17 @@ public class Server implements TCPConnectionListener {
         String nickName = conn.getName();
         if (nickName.isEmpty()) return;
 
-        String dt = LocalDateTime.now().format(dateTimeFormatter);
-        for (TCPConnection entry : connections) {
-            entry.sendString(dt + " " + nickName + ": " + message);
+        // может случиться, что получатель забанил отправителя
+        try {
+            String dt = LocalDateTime.now().format(dateTimeFormatter);
+            for (TCPConnection entry : connections) {
+                // кто-то может кого-то забанить
+                Boolean isBanned = authService.checkUserInBanList(entry.getName(), conn.getName());
+                if (isBanned) continue;
+                entry.sendString(dt + " " + nickName + ": " + message);
+            }
+        } catch (AuthServiceException e) {
+            System.out.println("Ошибка работы сервиса авторизации");
         }
     }
 
@@ -190,11 +256,35 @@ public class Server implements TCPConnectionListener {
         }
     }
 
+    /**
+     * Отправляем оновленные списки юзеров каждому клиенту по каждому
+     */
     private synchronized void sendNewClientList() {
-        ArrayList<String> arrayList = new ArrayList<>();
-        for (TCPConnection connection : connections) arrayList.add(connection.getName());
-        String clientList = String.join(",", arrayList);
-        sendBroadcastMessage("/clientlist " + clientList);
+        for (TCPConnection c : connections) sendPrivateClientList(c);
+    }
+
+    /**
+     * Отправка обновленного списка только для ЭТОГО соединения
+     *
+     * @param connection
+     */
+    private synchronized void sendPrivateClientList(@NotNull TCPConnection connection) {
+        try {
+            ArrayList<String> arrayList = new ArrayList<>();
+            // формируем список только по текущему клиенту
+            for (TCPConnection c : connections) {
+                if (connection == c) continue;
+                String checkNick = c.getName();
+                Boolean isBanned = authService.checkUserInBanList(connection.getName(), c.getName());
+                if (isBanned)
+                    arrayList.add("!" + checkNick);
+                else
+                    arrayList.add(checkNick);
+            }
+            connection.sendString("/clientlist " + String.join(",", arrayList));
+        } catch (AuthServiceException e) {
+            connection.sendString("/autherr На сервере неполадки. Попробуйте подключиться позже.");
+        }
     }
 
     private synchronized void sendPrivateMessage(String parts[], TCPConnection connection) {
@@ -229,7 +319,21 @@ public class Server implements TCPConnectionListener {
         String nickName = connection.getName();
         connection.sendString(dt + " " + nickName + ": " + message);
 
-        // получателю
+        // если адресат и отправитель совпадают, то все.
+        if (connection == receiver) return;
+
+        // может случиться, что получатель забанил отправителя
+        try {
+            Boolean isBanned = authService.checkUserInBanList(receiver.getName(), connection.getName());
+            if (isBanned) {
+                connection.sendString(dt + " " + receiver.getName() + " поместил Вас в черный список.");
+                return;
+            }
+        } catch (AuthServiceException e) {
+            System.out.println("Ошибка работы сервиса авторизации");
+        }
+
+        // отправим получателю
         receiver.sendString(dt + " " + nickName + ": " + message);
     }
 }

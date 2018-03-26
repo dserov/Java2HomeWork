@@ -30,18 +30,21 @@ import javafx.scene.control.ListCell;
  */
 
 public class UserCell extends ListCell<String> {
-    final static private Icon icon_user = new Icon(AwesomeIcon.USER, "1em", "", "");
-    final static private Icon icon_ban = new Icon(AwesomeIcon.BAN, "1em", "", "");
+    final private Icon icon_user = new Icon(AwesomeIcon.USER, "1em", "", "");
+    final private Icon icon_ban = new Icon(AwesomeIcon.BAN, "1em", "", "");
 
     @Override
     public void updateItem(String item, boolean empty) {
         super.updateItem(item, empty);
         if (!empty) {
-            if (item.charAt(0) == '!')
+            if (item.length() > 0 && item.charAt(0) == '!') {
                 setGraphic(icon_ban);
-            else
+                setText(item.substring(1));
+            }
+            else {
                 setGraphic(icon_user);
-            setText(item);
+                setText(item);
+            }
         } else {
             setGraphic(null);
             setText("");
